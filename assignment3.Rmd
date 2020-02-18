@@ -1,7 +1,7 @@
 ---
 title: "Statistical assignment 3"
-author: "[add your name here] [add your candidate number here - mandatory]"
-date: "[add date here]"
+author: "Amy Wonnacott [add your candidate number here - mandatory]"
+date: "12.02.20"
 output: github_document
 ---
 
@@ -33,7 +33,7 @@ library(data.table)
 
 files <- dir(
              # Select the folder where the files are stored.
-             "[add your path here]",
+             "C:/Users/User/Documents/GitHub/dataan3/UKDA-6614-tab/tab",
              # Tell R which pattern you want present in the files it will display.
              pattern = "indresp",
              # We want this process to repeat through the entire folder.
@@ -74,7 +74,9 @@ Now we have got the data from all 7 waves in the same data frame **all7** in the
 
 ```{r}
 Long <- all7 %>%
-  ...
+  gather(a_memorig:g_vote6, key = "variable", value = "value")%>%
+  separate(variable, into = c("wave", "variable"), sep = "_", extra = "merge") %>%
+  spread(key = variable, value = value)
 Long
 ```
 
@@ -84,27 +86,32 @@ Now we want to filter the data keeping only respondents from the original UKHLS 
 
 ```{r}
 Long <- Long %>%
-        filter(...) %>%
-        mutate(sex_dv = ...) %>%
-        mutate(vote6 = ...)
+        filter(memorig=="1") %>%
+        mutate(sex_dv = ifelse(sex_dv== 1, "male",
+                            ifelse(sex_dv==2, "female", NA))) %>%
+        mutate(vote6 = ifelse(vote6 > 0, vote6, NA))
 
-Long %>%
-        ...
-Long %>%
-        ...
+table(Long$sex_dv)
+table(Long$vote6)
 
 ```
+
 
 ## Calculate mean political interest by sex and wave (10 points)
 
 Political interest is an ordinal variable, but we will treat it as interval and calculate mean political interest for men and women in each wave.
 
 ```{r}
+
 meanVote6 <- Long %>%
-        ...
-        
+  group_by(wave, sex_dv) %>%
+  summarise(meanVote6 = mean(vote6, na.rm = TRUE))%>%
+  na.omit()
+
 meanVote6
+
 ```
+
 
 ## Reshape the data frame with summary statistics (20 points)
 
@@ -116,13 +123,16 @@ Your resulting data frame with the means is in the long format. Reshape it to th
 | male    |    |    |    |    |    |    |    |
 
 In the cells of this table you should have mean political interest by sex and wave.
+```{r}
+meanVote6 <- meanVote6%>%
+  pivot_wider(names_from = wave, values_from = meanVote6)
 
+```
 Write a short interpretation of your findings.
 
-```{r}
-meanVote6 %>%
-        ...
-```
+My findings show that females are more likely to have higher political interest than males, a statement which is true for all 7 waves. The ifgures do not vary too much between the waves, which suggests that political interest does not vary to a high degree per year. The highest mean of political interest for men and women occurred in Wave D: 2.98 for females and 2.55 for males. Wave D was in 2012-2013, which may have caused high political interest due to the announcing of both a Scottish and EU referendum, and the London mayoral elections. 
+The lowest mean for both men and women occurred in Wave G, with a mean of 2.73 for females and 2.42 for males. Wave G was in 2015-2016, which had a large number of siginifican political elections and events such as the 2015 General Election and the 2016 EU referendum. However this may cause lower political interest due to dissatisfied voters and lack of interest or trust in politics. 
+
 
 ## Estimate stability of political interest (30 points)
 
@@ -147,6 +157,29 @@ Write the R code that does the following.
 5. Write a short interpretation of your findings.
 
 ```{r}
-...
+# creating a new dataset witgout 
+Delta<- Long %>%
+  na.omit(Long)%>%
+  select(pidp, wave, vote6)
+
+pidp.unique<- Delta%>%
+  distinct(pidp)
+
+pidp1<- Delta%>%
+  filter(pidp=="68004087")
+
+delta<- function(pidp.unique){
+  sum(Delta$vote6[Delta$wave=="b"|Delta$pidp==pidp.unique]-Delta$vote6[Delta$wave=="a"|Delta$pidp==pidp.unique])+
+    (Delta$vote6[Delta$wave=="c"|Delta$pidp==pidp.unique]-Delta$vote6[Delta$wave=="b"|Delta$pidp==pidp.unique])+
+    (Delta$vote6[Delta$wave=="d"|Delta$pidp==pidp.unique]-Delta$vote6[Delta$wave=="c"|Delta$pidp==pidp.unique])+
+    (Delta$vote6[Delta$wave=="e"|Delta$pidp==pidp.unique]-Delta$vote6[Delta$wave=="d"|Delta$pidp==pidp.unique])+
+    (Delta$vote6[Delta$wave=="f"|Delta$pidp==pidp.unique]-Delta$vote6[Delta$wave=="e"|Delta$pidp==pidp.unique])+
+    (Delta$vote6[Delta$wave=="g"|Delta$pidp==pidp.unique]-Delta$vote6[Delta$wave=="f"|Delta$pidp==pidp.unique])}
+```
+Calculating mean Delta for men and women using the meanVote6 dataset created earlier.
+
+```{r}
+meanVote6<- meanVote6%>%
+  mutate(mean= sum(b-a)+(c-b)+(d-c)+(e-d)+(f-e)+(g-f))
 
 ```
