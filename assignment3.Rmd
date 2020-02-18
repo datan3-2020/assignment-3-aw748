@@ -1,6 +1,6 @@
 ---
 title: "Statistical assignment 3"
-author: "Amy Wonnacott [add your candidate number here - mandatory]"
+author: "Amy Wonnacott 095557"
 date: "12.02.20"
 output: github_document
 ---
